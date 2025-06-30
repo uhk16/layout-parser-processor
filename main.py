@@ -3,15 +3,38 @@ from google.api_core.client_options import ClientOptions
 from google.cloud import documentai
 from tkinter import filedialog, Tk
 import mimetypes
+from dotenv import load_dotenv
 
-# Set your credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:/Users/User/Downloads/build-ai-464207-d3c5fc844bb2 (1).json"
+# Load environment variables from .env file
+load_dotenv()
 
-# Your project configuration
-PROJECT_ID = "build-ai-464207"
-LOCATION = "eu"
-PROCESSOR_ID = "4364992e7c9ee607"
-PROCESSOR_VERSION = "rc"
+# Get configuration from environment variables
+GOOGLE_CREDENTIALS_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+PROJECT_ID = os.getenv("PROJECT_ID")
+LOCATION = os.getenv("LOCATION", "eu")
+PROCESSOR_ID = os.getenv("PROCESSOR_ID")
+PROCESSOR_VERSION = os.getenv("PROCESSOR_VERSION", "rc")
+
+
+def validate_environment():
+    """Validate that all required environment variables are set"""
+    if not GOOGLE_CREDENTIALS_PATH:
+        print("❌ GOOGLE_APPLICATION_CREDENTIALS not set in .env file")
+        return False
+    if not PROJECT_ID:
+        print("❌ PROJECT_ID not set in .env file")
+        return False
+    if not PROCESSOR_ID:
+        print("❌ PROCESSOR_ID not set in .env file")
+        return False
+    
+    if not os.path.exists(GOOGLE_CREDENTIALS_PATH):
+        print(f"❌ Credentials file not found: {GOOGLE_CREDENTIALS_PATH}")
+        return False
+    
+    # Set the environment variable for Google Cloud SDK
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIALS_PATH
+    return True
 
 
 def process_document(file_path: str, mime_type: str) -> str:
@@ -110,6 +133,21 @@ def get_mime_type(file_path: str) -> str:
 
 
 def main():
+    print("Document AI Text Extractor")
+    print("=" * 30)
+    
+    # Validate environment variables
+    if not validate_environment():
+        print("\nPlease create a .env file with the required variables:")
+        print("GOOGLE_APPLICATION_CREDENTIALS=path/to/your/credentials.json")
+        print("PROJECT_ID=your-project-id")
+        print("PROCESSOR_ID=your-processor-id")
+        print("LOCATION=eu")
+        print("PROCESSOR_VERSION=rc")
+        return
+    
+    print("✓ Environment variables validated")
+    
     # Hide tkinter root window
     root = Tk()
     root.withdraw()
@@ -133,15 +171,22 @@ def main():
         return
     
     try:
+        print(f"Processing: {os.path.basename(file_path)}")
+        
         # Get MIME type and process document
         mime_type = get_mime_type(file_path)
+        print(f"MIME type: {mime_type}")
+        
         extracted_text = process_document(file_path, mime_type)
         
         # Output extracted text
+        print("\n" + "=" * 30)
+        print("EXTRACTED TEXT:")
+        print("=" * 30)
         print(extracted_text)
         
     except Exception as e:
-        print(f"Error processing document: {e}")
+        print(f"❌ Error processing document: {e}")
 
 
 if __name__ == "__main__":
